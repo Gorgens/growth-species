@@ -3,21 +3,72 @@ title: "01Intro.Rmd"
 output: html_document
 ---
 
-## Importing a child document
-
-Authors can break long manuscripts into more manageable pieces by placing each chapter or section in their own Markdown file and using the R Markdown `child` option. Though most of the text (and code) in this document is contained in the file `computed_manuscript.Rmd`, the text for this section comes from `child_doc.Rmd`. Citations that are created in the child automatically get inserted into the final document, making it possible to create a single, unified bibliography. For instance, here's a reference for the [R Markdown Cookbook](https://bookdown.org/yihui/rmarkdown-cookbook/).[@xieMarkdownCookbook2020]
-
-```{r third-dataset}
-df3 <- read_csv('data/example-data-3.csv')
-really_final_data <- rbind(final_data, df3)
+```{r pacotes2, echo=FALSE, warning=FALSE, message=FALSE}
+require(tidyverse)
+require(magrittr)
+require(reshape2)
+require(ggplot2)
+require(phytools)
+require(knitr)
 ```
 
-In this child document, we'll add a third set of numbers to our growing dataset (Table \@ref(tab:show-table-3); note that the table, figure and section numbering in this child document matches that of the larger manuscript). 
+Foram considerado 28 inventários contínuos distribuidos nos estados do Pará, Amazonas, Acre, Rondônia e Mato Grosso. No total, foram analisadas 355 parcelas contendo 41580 indíviduos. Os dados fazem parte do projeto Paisagens Sustentáveis Brasil e estão disponíveis para download na plataforma do projeto  (https://www.embrapa.br/en/busca-de-solucoes-tecnologicas/-/produto-servico/3862/paisagens-sustentaveis). Após descartadar as árvores com diâmetros menores que 10 cm, e também as palmeiras, restaram 36283 árvores. 
 
-The new dataset describes **`r nrow(df3)`** samples. Folding them into our existing data gives us **`r nrow(really_final_data)`** subjects, with **`r really_final_data %>% filter(class == 'Group 1') %>% nrow()`** in Group 1, **`r really_final_data %>% filter(class == 'Group 2') %>% nrow()`** in Group 2, and **`r really_final_data %>% filter(class == 'Group 3') %>% nrow()`** in Group 3. The new concentration distribution is shown graphically in Figure \@ref(fig:plot-data-2).
+```{r limparInventario, echo=FALSE, warning=FALSE, message=FALSE}
+invMerged = read.csv("data/10_invPaisagensMerged.csv")
+nParcelasAntes= length(unique(paste(invMerged$area, invMerged$plot)))
+invMerged = invMerged %>%
+  filter(type == "O" | is.na(type)) %>%
+  drop_na(DBH) %>%
+  filter(DBH >= 10) 
+  
 
-```{r plot-data-2, fig.cap="Metabolite concentration of final clinical trial dataset", fig.height=3, fig.width=4}
-# plot the data
-create_plot(really_final_data)
+ nParcelasDepois= length(unique(paste(invMerged$area, invMerged$plot)))
 
+```
+
+```{r numeroParcelas, echo=FALSE, warning=FALSE, message=FALSE}
+parcelasArea = invMerged %>%
+  group_by(area, plot, subplot, year) %>%
+  summarise(obs = n()) %>%
+  group_by(area, year) %>%
+  summarise(nplots = n())
+ 
+```
+
+Cada árvore teve o incremento diamétrico anual ($d_{growth}$) determinado pela da divisão do incremento diamétrico observado entre medições consecutivas, pelo período em anos entre as medições.
+
+$$d_{growth} = \frac{d_f - d_i}{t_f - t_i}$$
+
+em que $d_{growth}$ é o incremento diamétrico anual, $d_f$ é o diâmetro a 1,30 m obtido no último ano de medição, $d_i$ é o diâmetro a 1,30 m obtido no primeiro ano de medição, $t_f$ é a data da última medição e $t_i$ é a data da primeira medição. 
+
+A taxa de crescimento diamétrico ($rGrowth$) foi calculado dividindo o incremento diamétrico anual pelo diâmetro a 1,30 obtido na primeira medição. Esta métrica é capaz de avaliar a taxa real de crescimento diamétrico sem a inflência do tamanho da árvore:
+
+$$rGrowth = \frac{d_{growth}}{d_i}$$
+
+em que $rGrowth$ é o incremento diamétrico relativo, $d_{growth}$ é o incremento diamétrico anual e $d_i$ é o diâmetro a 1,30 m obtido na primeira medição.
+
+Para analisar o efeito dos grupos eológicos na distribuição diamétrica, foi utilizado o modelo de Meyer linearizado, com a função de ligação identidade. O modelo de Meyer para descrever a distribuição diamétrica é definido como:
+
+$$N_j = e^{\beta_0 + \beta_1 D_j}$$
+
+em que $N_j$ indica o número de indivíduos na classe de diâmetro $j$ e $D_j$ indica o centro da classe $j$. E pode ser linearizado por meio da transformação logaritmica da variáveis dependentes:
+
+$$log(N_j) = \beta_0 + \beta_1 D_j$$
+
+```{r pareamentoIncremento, echo=FALSE, warning=FALSE, message=FALSE}
+incComercial = invMerged %>%
+  drop_na(GrupoEco) %>%
+  filter(comercial == 1) %>%
+  group_by(area, plot, subplot, tree, scientific.name, GrupoEco) %>%
+  summarise(med = n(),
+            cc = min(cc), 
+            minDBH = min(DBH), 
+            maxDBH = max(DBH), 
+            inc = max(DBH) - min(DBH), 
+            intervMed = max(year) - min(year), 
+            incAnual = ifelse(inc == 0, 0.01, inc / intervMed),
+            rInc = incAnual / minDBH) %>%
+  filter(med > 1)
+  
 ```
