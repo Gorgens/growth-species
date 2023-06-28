@@ -1,5 +1,5 @@
 ---
-title: "02methods.Rmd"
+title: "01Intro.Rmd"
 output: html_document
 ---
 
@@ -12,8 +12,7 @@ require(phytools)
 require(knitr)
 ```
 
-A base de dados estudada contém 28 inventários contínuos ocorridos nos estados do Pará, Amazonas, Acre, Rondônia e Mato Grossos, gerando a análise de 355 parcelas com 41580 indivíduos, que após descarte de árvores com diâmetros menores que 10 cm, e também as palmeiras, restaram 36283 árvores.  Os dados foram obtidos do projeto Paisagens Sustentáveis Brasil e estão disponíveis para download na plataforma do projeto  (https://www.embrapa.br/en/busca-de-solucoes-tecnologicas/-/produto-servico/3862/paisagens-sustentaveis).
-
+Foram considerado 28 inventários contínuos distribuidos nos estados do Pará, Amazonas, Acre, Rondônia e Mato Grosso. No total, foram analisadas 355 parcelas contendo 41580 indíviduos. Os dados fazem parte do projeto Paisagens Sustentáveis Brasil e estão disponíveis para download na plataforma do projeto  (https://www.embrapa.br/en/busca-de-solucoes-tecnologicas/-/produto-servico/3862/paisagens-sustentaveis). Após descartadar as árvores com diâmetros menores que 10 cm, e também as palmeiras, restaram 36283 árvores. 
 
 ```{r limparInventario, echo=FALSE, warning=FALSE, message=FALSE}
 invMerged = read.csv("data/10_invPaisagensMerged.csv")
@@ -37,8 +36,6 @@ parcelasArea = invMerged %>%
  
 ```
 
-
-
 Cada árvore teve o incremento diamétrico anual ($d_{growth}$) determinado pela da divisão do incremento diamétrico observado entre medições consecutivas, pelo período em anos entre as medições.
 
 $$d_{growth} = \frac{d_f - d_i}{t_f - t_i}$$
@@ -51,10 +48,15 @@ $$rGrowth = \frac{d_{growth}}{d_i}$$
 
 em que $rGrowth$ é o incremento diamétrico relativo, $d_{growth}$ é o incremento diamétrico anual e $d_i$ é o diâmetro a 1,30 m obtido na primeira medição.
 
+Para analisar o efeito dos grupos eológicos na distribuição diamétrica, foi utilizado o modelo de Meyer linearizado, com a função de ligação identidade. O modelo de Meyer para descrever a distribuição diamétrica é definido como:
 
+$$N_j = e^{\beta_0 + \beta_1 D_j}$$
 
-```{r pareamentoIncrementoSpeciesComercial, echo=FALSE, warning=FALSE, message=FALSE}
+em que $N_j$ indica o número de indivíduos na classe de diâmetro $j$ e $D_j$ indica o centro da classe $j$. E pode ser linearizado por meio da transformação logaritmica da variáveis dependentes:
 
+$$log(N_j) = \beta_0 + \beta_1 D_j$$
+
+```{r pareamentoIncremento, echo=FALSE, warning=FALSE, message=FALSE}
 incComercial = invMerged %>%
   drop_na(GrupoEco) %>%
   filter(comercial == 1) %>%
@@ -68,45 +70,5 @@ incComercial = invMerged %>%
             incAnual = ifelse(inc == 0, 0.01, inc / intervMed),
             rInc = incAnual / minDBH) %>%
   filter(med > 1)
-
+  
 ```
-
-
-
-Seleção de espécies de interesse...
-
-
-```{r speciesInteresse, echo=FALSE, warning=FALSE, message=FALSE}
-speciesOfInterest = c("Eschweilera coriacea", "Lecythis idatimon", "Manilkara huberi", "Rinorea guianensis", 
- "Tetragastris panamensis", "Inga marginata", " Pseudopiptadenia suaveolens", " Inga thibaudiana",  
- "Tetragastris altissima", "Neea oppositifolia", "Jacaranda copaia", "Nectandra cuspidata", "Laetia procera",
- "Pourouma minor",  "Inga alba","Lecythis pisonis", "Dinizia excelsa")
-
-   species01=incComercial %>%
-   filter(scientific.name %in%speciesOfInterest) %>%
-   group_by(area, scientific.name) %>%
-   summarise(count = n()) %>%
-   pivot_wider(names_from = scientific.name, values_from = count)
-   
-```
-
-
-```{r pareamentoIncrementoSpeciesInteresse, echo=FALSE, warning=FALSE, message=FALSE}
-
-incInteresse = invMerged %>%
-  drop_na(GrupoEco) %>%
-  filter(scientific.name %in%speciesOfInterest) %>%
-  group_by(area, plot, subplot, tree, scientific.name, GrupoEco) %>%
-  summarise(med = n(),
-            cc = min(cc), 
-            minDBH = min(DBH), 
-            maxDBH = max(DBH), 
-            inc = max(DBH) - min(DBH), 
-            intervMed = max(year) - min(year), 
-            incAnual = ifelse(inc == 0, 0.01, inc / intervMed),
-            rInc = incAnual / minDBH) %>%
-  filter(med > 1)
-
-```
-
-
