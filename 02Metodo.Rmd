@@ -21,7 +21,11 @@ nParcelasAntes= length(unique(paste(invMerged$area, invMerged$plot)))
 invMerged = invMerged %>%
   filter(type == "O" | is.na(type)) %>%
   drop_na(DBH) %>%
-  filter(DBH >= 10) 
+  filter(DBH >= 10)%>%
+  mutate(date= as.Date(date)) %>%
+  filter(date <Sys.Date()-365)
+  
+  
   
 
  nParcelasDepois= length(unique(paste(invMerged$area, invMerged$plot)))
@@ -58,7 +62,7 @@ em que $rGrowth$ é o incremento diamétrico relativo, $d_{growth}$ é o increme
 incComercial = invMerged %>%
   drop_na(GrupoEco) %>%
   filter(comercial == 1) %>%
-  group_by(area, plot, subplot, tree, scientific.name, GrupoEco) %>%
+  group_by(area,  plot, subplot, tree, scientific.name, GrupoEco) %>%
   summarise(med = n(),
             cc = min(cc), 
             minDBH = min(DBH), 
@@ -73,14 +77,11 @@ incComercial = invMerged %>%
 
 
 
-Seleção de espécies de interesse...
+##Seleção de espécies de interesse
 
 
 ```{r speciesInteresse, echo=FALSE, warning=FALSE, message=FALSE}
-speciesOfInterest = c("Eschweilera coriacea", "Lecythis idatimon", "Manilkara huberi", "Rinorea guianensis", 
- "Tetragastris panamensis", "Inga marginata", " Pseudopiptadenia suaveolens", " Inga thibaudiana",  
- "Tetragastris altissima", "Neea oppositifolia", "Jacaranda copaia", "Nectandra cuspidata", "Laetia procera",
- "Pourouma minor",  "Inga alba","Lecythis pisonis", "Dinizia excelsa")
+speciesOfInterest = c("Eschweilera coriacea", " Lecythis idatimon", "Manilkara huberi", "Tetragastris panamensis", "Inga marginata", "Lecythis lurida", "Pseudopiptadenia suaveolens", "Inga thibaudiana",  "Dialium guianense", "Neea oppositifolia", "Jacaranda copaia", "Nectandra cuspidata", "Laetia procera", "Tachigali paniculata",  "Minquartia guianensis", "Inga alba",  "Carapa guianensis", " Licania heteromorpha", "Zollernia paraensis", "Lecythis pisonis", "Dinizia excelsa", "Ocotea cernua", " Poecilanthe effusa")
 
    species01=incComercial %>%
    filter(scientific.name %in%speciesOfInterest) %>%
@@ -108,5 +109,4 @@ incInteresse = invMerged %>%
   filter(med > 1)
 
 ```
-
 

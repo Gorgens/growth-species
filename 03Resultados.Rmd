@@ -3,6 +3,8 @@ title: "03results.Rmd"
 output: html_document
 ---
 
+
+
 ```{r pacotes3, echo=FALSE, warning=FALSE, message=FALSE}
 require(tidyverse)
 require(magrittr)
@@ -12,6 +14,7 @@ require(bayesplot)
 require(ggplot2)
 require(gridExtra)
 ```
+
 
 ```{r arvHaEspecie, echo=FALSE, warning=FALSE, message=FALSE}
 arvHaEspecie = invMerged %>%
@@ -35,18 +38,6 @@ arvHaEspecie = invMerged %>%
 
 ```
 
-Incremento de espécies de interesse que são comerciais
-```{r incComercial, echo=FALSE, warning= FALSE, message=FALSE}
-incrementoSpecies = incComercial%>%
-  group_by(scientific.name) %>%
-  filter(scientific.name %in%speciesOfInterest) %>%
-  summarise(inc = median(incAnual),
-            incIQR = IQR(incAnual, na.rm = TRUE),
-            rIncA = median(rInc),
-            rIncIQR = IQR(rInc, na.rm = TRUE))
-```
-
-incremento de espécies de teste 
 
 ```{r incInteresse, echo=FALSE, warning= FALSE, message=FALSE}
 
@@ -71,17 +62,6 @@ knitr::kable(
 ```
 
 
-```{r tabelaEspecieisComerciais, echo=FALSE, warning= FALSE, message=FALSE}
-
-knitr::kable(
-  inner_join(arvHaEspecie, incrementoSpecies, by="scientific.name") %>%
-    select(scientific.name, inc, incIQR,  rIncA, rIncIQR),
-  caption = 'Resumo das Espécies de Interesse.'
-    )
-
-
-```
-
 
 
 ```{r graficoDDInc, echo=FALSE, warning=FALSE, message=FALSE, fig.cap = 'Distribuição do incremento diamétrico anual para cada espécie por centro de classe.'}
@@ -99,29 +79,7 @@ ggplot(incMedSpecies, aes(cc, incMediaAnual)) +
                      panel.grid.minor = element_blank(),
                      panel.background = element_blank(),
                      axis.line = element_line(colour = "black"))+
-  facet_wrap(~factor(scientific.name,levels=c("Dinizia excelsa","Eschweilera coriacea","Inga alba",
-"Inga marginata","Jacaranda copaia","Laetia procera","Lecythis idatimon","Lecythis pisonis","Manilkara huberi",
-"Nectandra cuspidata","Neea oppositifolia","Pourouma minor","Rinorea guianensis","Tetragastris altissima","Tetragastris panamensis")), ncol=4)
-
-```
-
-
-```{r ddIncComercial, echo=FALSE, message=FALSE, warning=FALSE}
-incMedSpecies = incComercial %>%
-  filter(scientific.name %in%speciesOfInterest) %>%
-  group_by(scientific.name, cc) %>%
-  summarise(incMediaAnual = mean(incAnual))
-
-ggplot(incMedSpecies, aes(cc, incMediaAnual)) + 
-  geom_col() +
-  xlab('Diameter distribution') + ylab('Incremento Anual') +
-  ylim(0, 2.5) +
-    theme_bw() + theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank(),
-                     panel.background = element_blank(),
-                     axis.line = element_line(colour = "black"))+
-  facet_wrap(~factor(scientific.name,levels=c("Dinizia excelsa","Eschweilera coriacea",
-"Jacaranda copaia","Laetia procera","Lecythis pisonis")), ncol=2)
+  facet_wrap(~factor(scientific.name,levels=c("Eschweilera coriacea", " Lecythis idatimon", "Manilkara huberi", "Tetragastris panamensis", "Inga marginata", "Lecythis lurida", "Pseudopiptadenia suaveolens", "Inga thibaudiana",  "Dialium guianense", "Neea oppositifolia", "Jacaranda copaia", "Nectandra cuspidata", "Laetia procera", "Tachigali paniculata",  "Minquartia guianensis", "Inga alba",  "Carapa guianensis", " Licania heteromorpha", "Zollernia paraensis", "Lecythis pisonis", "Dinizia excelsa", "Ocotea cernua", " Poecilanthe effusa")), ncol=5)
 
 ```
 
@@ -143,7 +101,8 @@ numeroArvores = invMerged %>%
   group_by(area, scientific.name, cc) %>%
   summarise(arvha = mean(arvha)) %>%
   group_by(scientific.name, cc) %>%
-  summarise(arvha = mean(arvha))
+  summarise(arvha = mean(arvha), med= n())
+    
 
 
 ggplot(numeroArvores, aes(cc, arvha)) + geom_col() +
@@ -152,43 +111,7 @@ ggplot(numeroArvores, aes(cc, arvha)) + geom_col() +
                      panel.grid.minor = element_blank(),
                      panel.background = element_blank(),
                      axis.line = element_line(colour = "black"))+
-  facet_wrap(~factor(scientific.name,levels=c("Dinizia excelsa","Eschweilera coriacea","Inga alba",
-"Inga marginata","Jacaranda copaia","Laetia procera","Lecythis idatimon","Lecythis pisonis","Manilkara huberi",
-"Nectandra cuspidata","Neea oppositifolia","Pourouma minor","Rinorea guianensis","Tetragastris altissima","Tetragastris panamensis")), ncol=4)
-
-```
-
-
-
-```{r graficoDDSpeciesComerciais, echo=FALSE, warning=FALSE, message=FALSE, fig.cap = 'Distribuição diamétrica para as espécies comerciais.'}
-
-numeroArvores = invMerged %>%
-  filter(scientific.name %in%speciesOfInterest) %>%
-  filter(comercial == 1) %>%
-  group_by(area, year, plot, subplot, GrupoEco, scientific.name, cc) %>% 
-  summarise(ntree = sum(eqTree))  %>%
-  drop_na(ntree) %>%
-  group_by(area, year, plot, scientific.name, cc)%>%
-  summarise(ntree = mean(ntree)) %>%
-  group_by(area, year, scientific.name, cc)%>%
-  summarise(ntree = sum(ntree)) %>%
-  left_join(parcelasArea) %>%
-  mutate(arvha = ntree/ nplots) %>%
-  group_by(area, scientific.name, cc) %>%
-  summarise(arvha = mean(arvha)) %>%
-  group_by(scientific.name, cc) %>%
-  summarise(arvha = mean(arvha))
-
-
-ggplot(numeroArvores, aes(cc, arvha)) + geom_col() +
-  xlab('Diameter distribution') + ylab('Trees per hectare') +
-    theme_bw() + theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank(),
-                     panel.background = element_blank(),
-                     axis.line = element_line(colour = "black"))+
-  facet_wrap(~factor(scientific.name,levels=c("Dinizia excelsa","Eschweilera coriacea",
-"Jacaranda copaia","Laetia procera","Lecythis pisonis")), ncol=2)
-
+  facet_wrap(~factor(scientific.name,levels=c("Eschweilera coriacea", " Lecythis idatimon", "Manilkara huberi", "Tetragastris panamensis", "Inga marginata", "Lecythis lurida", "Pseudopiptadenia suaveolens", "Inga thibaudiana",  "Dialium guianense", "Neea oppositifolia", "Jacaranda copaia", "Nectandra cuspidata", "Laetia procera", "Tachigali paniculata",  "Minquartia guianensis", "Inga alba",  "Carapa guianensis", " Licania heteromorpha", "Zollernia paraensis", "Lecythis pisonis", "Dinizia excelsa", "Ocotea cernua", " Poecilanthe effusa")), ncol=5)
 
 ```
 
@@ -210,7 +133,10 @@ numeroArvores = invMerged %>%
   group_by(area, scientific.name, cc) %>%
   summarise(arvha = mean(arvha)) %>%
   group_by(scientific.name, cc) %>%
-  summarise(arvha = mean(arvha))
+  summarise(arvha = mean(arvha), 
+            med= n())%>%
+    filter(med >1)
+
 
 arvAcumuladas = c()
 centroClasse = c()
@@ -242,13 +168,94 @@ ggplot(numeroArvoresAcumulado, aes(centroClasse, arvAcumuladas)) + geom_col() +
                      panel.grid.minor = element_blank(),
                      panel.background = element_blank(),
                      axis.line = element_line(colour = "black"))+
-  facet_wrap(~factor(speciesInteresse,levels=c("Dinizia excelsa","Eschweilera coriacea","Inga alba",
-"Inga marginata","Jacaranda copaia","Laetia procera","Lecythis idatimon","Lecythis pisonis","Manilkara huberi",
-"Nectandra cuspidata","Neea oppositifolia","Pourouma minor","Rinorea guianensis","Tetragastris altissima","Tetragastris panamensis")), ncol=4)
+  facet_wrap(~factor(speciesInteresse,levels=c("Eschweilera coriacea", " Lecythis idatimon", "Manilkara huberi", "Tetragastris panamensis", "Inga marginata", "Lecythis lurida", "Pseudopiptadenia suaveolens", "Inga thibaudiana",  "Dialium guianense", "Neea oppositifolia", "Jacaranda copaia", "Nectandra cuspidata", "Laetia procera", "Tachigali paniculata",  "Minquartia guianensis", "Inga alba",  "Carapa guianensis", " Licania heteromorpha", "Zollernia paraensis", "Lecythis pisonis", "Dinizia excelsa", "Ocotea cernua", " Poecilanthe effusa")), ncol=5)
 ```
 
 
-```{r graficoDDGrupoEcoAcumuladoComerciais, echo=FALSE, warning=FALSE, message=FALSE, fig.cap = 'Distribuição diamétrica acumulada para as espécies comerciais.'}
+##Filtragem de espécies comerciais
+
+
+```{r incInteresse, echo=FALSE, warning= FALSE, message=FALSE}
+
+incrementoC = incComercial%>%
+  group_by(scientific.name) %>%
+  summarise(inc = median(incAnual),
+            incIQR = IQR(incAnual, na.rm = TRUE),
+            rIncA = median(rInc),
+            rIncIQR = IQR(rInc, na.rm = TRUE))
+
+```
+
+
+```{r tabelaEspecieisComerciais, echo=FALSE, warning= FALSE, message=FALSE}
+
+knitr::kable(
+  inner_join(arvHaEspecie, incrementoC, by="scientific.name") %>%
+    select(scientific.name, inc, incIQR,  rIncA, rIncIQR),
+  caption = 'Resumo das Espécies de Interesse.'
+    )
+
+
+```
+
+
+
+
+```{r distribuicaoIncComercial, echo=FALSE, message=FALSE, warning=FALSE}
+incMedC = incComercial %>%
+  filter(scientific.name %in%speciesOfInterest) %>%
+   group_by(scientific.name, cc) %>%
+  summarise(incMediaAnual = mean(incAnual))
+
+ggplot(incMedC, aes(cc, incMediaAnual)) + 
+  geom_col() +
+  xlab('Diameter distribution') + ylab('Incremento Anual') +
+  ylim(0, 2.5) +
+    theme_bw() + theme(panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(),
+                     panel.background = element_blank(),
+                     axis.line = element_line(colour = "black"))+
+  facet_wrap(~factor(scientific.name,levels=c("Carapa guianensis", "Dinizia excelsa","Eschweilera coriacea","Jacaranda copaia","Laetia procera","Lecythis lurida", "Lecythis pisonis", "Pseudopiptadenia suaveolens")), ncol=2)
+
+```
+
+
+```{r graficoDDSpeciesComerciais, echo=FALSE, warning=FALSE, message=FALSE, fig.cap = 'Distribuição diamétrica para as espécies comerciais.'}
+
+numeroArvores = invMerged %>%
+  filter(scientific.name %in%speciesOfInterest) %>%
+  filter(comercial == 1) %>%
+  group_by(area, year, plot, subplot, GrupoEco, scientific.name, cc) %>% 
+  summarise(ntree = sum(eqTree))  %>%
+  drop_na(ntree) %>%
+  group_by(area, year, plot, scientific.name, cc)%>%
+  summarise(ntree = mean(ntree)) %>%
+  group_by(area, year, scientific.name, cc)%>%
+  summarise(ntree = sum(ntree)) %>%
+  left_join(parcelasArea) %>%
+  mutate(arvha = ntree/ nplots) %>%
+  group_by(area, scientific.name, cc) %>%
+  summarise(arvha = mean(arvha)) %>%
+  group_by(scientific.name, cc) %>%
+  summarise(arvha = mean(arvha),
+            med=n()) 
+    
+
+
+ggplot(numeroArvores, aes(cc, arvha)) + geom_col() +
+  xlab('Diameter distribution') + ylab('Trees per hectare') +
+    theme_bw() + theme(panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(),
+                     panel.background = element_blank(),
+                     axis.line = element_line(colour = "black"))+
+  facet_wrap(~factor(scientific.name,levels=c("Carapa guianensis", "Dinizia excelsa","Eschweilera coriacea","Jacaranda copaia","Laetia procera","Lecythis lurida", "Lecythis pisonis", "Pseudopiptadenia suaveolens")), ncol=4)
+
+
+```
+
+
+
+```{r graficoDDAcumuladoEspComerciais, echo=FALSE, warning=FALSE, message=FALSE, fig.cap = 'Distribuição diamétrica acumulada para as espécies comerciais.'}
 numeroArvores = invMerged %>%
   filter(scientific.name %in%speciesOfInterest) %>%
   filter(comercial == 1) %>%
@@ -296,10 +303,5 @@ ggplot(numeroArvoresAcumulado, aes(centroClasse, arvAcumuladas)) + geom_col() +
                      panel.grid.minor = element_blank(),
                      panel.background = element_blank(),
                      axis.line = element_line(colour = "black"))+
-  facet_wrap(~factor(speciesInteresse,levels=c("Dinizia excelsa","Eschweilera coriacea",
-"Jacaranda copaia","Laetia procera","Lecythis pisonis")), ncol=2)
+  facet_wrap(~factor(speciesInteresse,levels=c("Carapa guianensis", "Dinizia excelsa","Eschweilera coriacea","Jacaranda copaia","Laetia procera","Lecythis lurida", "Lecythis pisonis", "Pseudopiptadenia suaveolens")), ncol=4)
 ```
-
-
-
-
